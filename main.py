@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import Activity, ActivityType, Status
 import random
 import config
 import datetime
@@ -413,5 +414,11 @@ async def on_ready():
     except Exception as e:
         print(e)
 
+    await bot.change_presence(
+        activity=Activity(
+            type=ActivityType.playing, name="Backdoors and Breaches"
+        ),
+        status=Status.online,
+    )
 
 bot.run(config.discordtoken)
