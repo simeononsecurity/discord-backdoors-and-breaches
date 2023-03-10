@@ -395,8 +395,8 @@ async def end_game(ctx):
 
     await ctx.send("Game ended")
 
-@bot.hybrid_command(name="help", description="Describes the available commands.")
-async def help(ctx):
+@bot.hybrid_command(name="bnbhelp", description="Describes the available commands.")
+async def bnbhelp(ctx):
     try:
         response = """## Available Commands
 
