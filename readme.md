@@ -5,7 +5,7 @@
 <img src="https://github.com/simeononsecurity/discord-backdoors-and-breaches/blob/main/.github/images/bnb-dark.png?raw=true" alt="Backdoors and Breaches logo" width="200"/>
 
 
-A Discord bot for Backdoors and Breaches, a turn-based strategy game by The [BHIS](https://www.blackhillsinfosec.com/projects/backdoorsandbreaches/).
+A Discord bot for Backdoors and Breaches, a turn-based strategy game by [BHIS](https://www.blackhillsinfosec.com/projects/backdoorsandbreaches/).
 
 ## Available Commands
 
