@@ -30,8 +30,6 @@ To run a command, type `!` or `/` followed by the command name in the game chann
 [SETTINGS]
 discordtoken = put_discord_bot_token_here
 channel_id = put_game_channel_id_here
-
-markdown
 ```
 4. Replace `put_discord_bot_token_here` with your Discord bot token and `put_game_channel_id_here` with the ID of the channel where you want the game to be played.
 5. Run the bot using `python main.py`.
