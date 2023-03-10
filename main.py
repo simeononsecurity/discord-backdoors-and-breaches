@@ -56,7 +56,7 @@ def roll_die():
     return random.randint(1, 20)
 
 
-@bot.hybrid_command(name="start-game", description="")
+@bot.hybrid_command(name="start-game", description="Starts a new game by creating a new channel and setting up the necessary roles and permissions.")
 async def start_game(ctx):
     global players, procedures, incident_master, incident_master_names, c2_and_exfil, persistence, injects, pivot_and_escalate, incident_master_card, game_ended, hands, c2_and_exfil_card, persistence_card, pivot_and_escalate_card, inital_played
 
@@ -119,7 +119,7 @@ async def start_game(ctx):
     )
 
 
-@bot.hybrid_command(name="join-game", description="")
+@bot.hybrid_command(name="join-game", description="Allows players to join the game by assigning them the "Player" role and granting them access to the game channel.")
 async def join_game(ctx):
     global players
 
@@ -135,7 +135,7 @@ async def join_game(ctx):
         await ctx.send(f"{ctx.author.mention} is already in the game!")
 
 
-@bot.hybrid_command(name="play-procedure", description="")
+@bot.hybrid_command(name="play-procedure", description="Starts the Procedure phase of the game, where players must complete a series of challenges to progress.")
 async def play_procedure(ctx, card_name):
     global incident_master_card, turn, players, game_ended, hands, pivot_played, c2_played, persistence_played, procedures, cooldowns, inital_played, failed_rolls
 
@@ -247,7 +247,7 @@ async def play_procedure(ctx, card_name):
         return
 
 
-@bot.hybrid_command(name="play-incident-master", description="")
+@bot.hybrid_command(name="play-incident-master", description="Starts the Incident Master phase of the game, where players take turns being the Incident Master and directing the other players on how to respond to a simulated incident.")
 async def play_incident_master(ctx, card_name: str):
     global incident_master_card, turn, players, game_ended, incident_master, hands, c2_and_exfil_card, persistence_card, pivot_and_escalate_card
 
@@ -276,7 +276,7 @@ async def play_incident_master(ctx, card_name: str):
     await ctx.send("Cmd should not be used?")
 
 
-@bot.hybrid_command(name="play-c2", description="")
+@bot.hybrid_command(name="play-c2", description="Starts the Command and Control phase of the game, where players take turns being the C2 team and must coordinate with the other players to complete a series of tasks.")
 async def play_c2(ctx, card_name: str):
     global incident_master_card, turn, players, game_ended, incident_master, hands, c2_and_exfil_card, c2_played
 
@@ -303,7 +303,7 @@ async def play_c2(ctx, card_name: str):
     await ctx.send("Card played")
 
 
-@bot.hybrid_command(name="play-persistence", description="")
+@bot.hybrid_command(name="play-persistence", description="Starts the Persistence phase of the game, where players must find and eliminate a hidden backdoor in the system.")
 async def play_persistence(ctx, card_name: str):
     global incident_master_card, turn, players, game_ended, incident_master, hands, c2_and_exfil_card, persistence_card, persistence_played
 
@@ -330,7 +330,7 @@ async def play_persistence(ctx, card_name: str):
     await ctx.send("Card played")
 
 
-@bot.hybrid_command(name="play-pivot", description="")
+@bot.hybrid_command(name="play-pivot", description="Starts the Pivot phase of the game, where players must pivot to a different part of the system and continue their investigation.")
 async def play_pivot_and_escalate(ctx, card_name: str):
     global incident_master_card, turn, players, game_ended, incident_master, hands, c2_and_exfil_card, persistence_card, pivot_and_escalate_card, pivot_played
 
@@ -357,7 +357,7 @@ async def play_pivot_and_escalate(ctx, card_name: str):
     await ctx.send("Card played")
 
 
-@bot.hybrid_command(name="end-game")
+@bot.hybrid_command(name="end-game", description="Ends the current game and deletes the game channel and associated roles.")
 async def end_game(ctx):
     global players
     global procedures
@@ -395,6 +395,24 @@ async def end_game(ctx):
 
     await ctx.send("Game ended")
 
+@bot.hybrid_command(name="help", description="Describes the available commands.")
+async def help(ctx):
+    try:
+        response = """## Available Commands
+
+- `start-game`: Starts a new game by creating a new channel and setting up the necessary roles and permissions.
+- `join-game`: Allows players to join the game by assigning them the "Player" role and granting them access to the game channel.
+- `play-procedure`: Starts the Procedure phase of the game, where players must complete a series of challenges to progress.
+- `play-incident-master`: Starts the Incident Master phase of the game, where players take turns being the Incident Master and directing the other players on how to respond to a simulated incident.
+- `play-c2`: Starts the Command and Control phase of the game, where players take turns being the C2 team and must coordinate with the other players to complete a series of tasks.
+- `play-persistence`: Starts the Persistence phase of the game, where players must find and eliminate a hidden backdoor in the system.
+- `play-pivot`: Starts the Pivot phase of the game, where players must pivot to a different part of the system and continue their investigation.
+- `end-game`: Ends the current game and deletes the game channel and associated roles.
+
+To run a command, type `!` or `/` followed by the command name in the game channel. For example, to start a new game, type `!start-game`. Note that some commands may only be available during certain phases of the game."""
+        await ctx.send(response)
+    except Exception as e:
+        await ctx.send(f"Error: {e}. An unexpected error occurred.")
 
 @bot.event
 async def on_ready():
