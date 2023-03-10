@@ -61,9 +61,10 @@ def roll_die():
 async def start_game(ctx):
     global players, procedures, incident_master, incident_master_names, c2_and_exfil, persistence, injects, pivot_and_escalate, incident_master_card, game_ended, hands, c2_and_exfil_card, persistence_card, pivot_and_escalate_card, inital_played
 
-    if not str(ctx.channel.id) == str(config.config["SETTINGS"]["channel_id"].strip()) or not str(ctx.channel.id) == str(os.environ.get("CHANNEL_ID")):
-        return await ctx.send("This command can only be used in the designated game channel.")
-
+    if str(ctx.channel.id) != str(config.config["SETTINGS"]["channel_id"].strip()):
+        if str(ctx.channel.id) != str(os.environ.get("CHANNEL_ID")):
+            return await ctx.send("This command can only be used in the designated game channel.")
+        
     if ctx.author not in players:
         players.append(ctx.author)
 
@@ -124,8 +125,9 @@ async def start_game(ctx):
 async def join_game(ctx):
     global players
 
-    if not str(ctx.channel.id) == str(config.config["SETTINGS"]["channel_id"].strip()) or not str(ctx.channel.id) == str(os.environ.get("CHANNEL_ID")):
-        return await ctx.send("This command can only be used in the designated game channel.")
+    if str(ctx.channel.id) != str(config.config["SETTINGS"]["channel_id"].strip()):
+        if str(ctx.channel.id) != str(os.environ.get("CHANNEL_ID")):
+            return await ctx.send("This command can only be used in the designated game channel.")
 
     if ctx.author not in players:
         players.append(ctx.author)
@@ -148,8 +150,9 @@ async def play_procedure(ctx, card_name):
         await ctx.send("It's not your turn!")
         return
 
-    if not str(ctx.channel.id) == str(config.config["SETTINGS"]["channel_id"].strip()) or not str(ctx.channel.id) == str(os.environ.get("CHANNEL_ID")):
-        return await ctx.send("This command can only be used in the designated game channel.")
+    if str(ctx.channel.id) != str(config.config["SETTINGS"]["channel_id"].strip()):
+        if str(ctx.channel.id) != str(os.environ.get("CHANNEL_ID")):
+            return await ctx.send("This command can only be used in the designated game channel.")
 
     # Find the current player's hand and incident master card
     player_index = players.index(player)
@@ -374,8 +377,9 @@ async def end_game(ctx):
     global inital_played
     global failed_rolls
 
-    if not str(ctx.channel.id) == str(config.config["SETTINGS"]["channel_id"].strip()) or not str(ctx.channel.id) == str(os.environ.get("CHANNEL_ID")):
-        return await ctx.send("This command can only be used in the designated game channel.")
+    if str(ctx.channel.id) != str(config.config["SETTINGS"]["channel_id"].strip()):
+        if str(ctx.channel.id) != str(os.environ.get("CHANNEL_ID")):
+            return await ctx.send("This command can only be used in the designated game channel.")
 
     game_ended = True
 
