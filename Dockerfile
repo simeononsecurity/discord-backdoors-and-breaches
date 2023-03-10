@@ -1,6 +1,11 @@
 # Use an official Python runtime as a parent image
 FROM python:3.11.2-bullseye
 
+#Set labels
+LABEL org.opencontainers.image.source="https://github.com/simeononsecurity/discord-backdoors-and-breaches"
+LABEL org.opencontainers.image.description="A Discord Bot for Backdoors and Breaches "
+LABEL org.opencontainers.image.authors="simeononsecurity"
+
 # Set the working directory to /app
 WORKDIR /
 
