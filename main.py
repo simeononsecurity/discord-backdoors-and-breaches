@@ -3,8 +3,6 @@ from discord.ext import commands
 import random
 import config
 import datetime
-import asyncio
-import os
 
 #import card dictionaries
 import cards.procedures as proceduresData
