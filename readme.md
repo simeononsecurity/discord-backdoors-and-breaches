@@ -57,10 +57,10 @@ docker run --env-file .env discord-backdoors-and-breaches
 
 Alternatively, you can set the environment variables directly during the `docker run` command:
 ```bash
-docker run -e BOT_TOKEN=<discord_bot_token_here> -e CHANNEL_ID=<game_channel_id_here> discord-backdoors-and-breaches
+docker run -td --name bnbbot -e BOT_TOKEN=<discord_bot_token_here> -e CHANNEL_ID=<game_channel_id_here> discord-backdoors-and-breaches
 ```
 or pull straight from the image on [dockerhub](https://hub.docker.com/r/simeononsecurity/discord-backdoors-and-breaches)
 ```bash
-docker run -e BOT_TOKEN=<discord_bot_token_here> -e CHANNEL_ID=<game_channel_id_here> simeononsecurity/discord-backdoors-and-breaches:latest
+docker run -td --name bnbbot -e BOT_TOKEN=<discord_bot_token_here> -e CHANNEL_ID=<game_channel_id_here> simeononsecurity/discord-backdoors-and-breaches:latest
 ```
 
