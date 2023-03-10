@@ -119,7 +119,7 @@ async def start_game(ctx):
     )
 
 
-@bot.hybrid_command(name="join-game", description="Allows players to join the game by assigning them the "Player" role and granting them access to the game channel.")
+@bot.hybrid_command(name="join-game", description="Allows players to join the game by assigning them the Player role and granting them access to the game channel.")
 async def join_game(ctx):
     global players
 
