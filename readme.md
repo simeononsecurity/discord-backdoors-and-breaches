@@ -7,14 +7,18 @@
 
 A Discord bot for Backdoors and Breaches, a turn-based strategy game by The [BHIS](https://www.blackhillsinfosec.com/projects/backdoorsandbreaches/).
 
-## Commands
+## Available Commands
 
-- `!startgame`: starts a new game of Backdoors and Breaches. Only one game can be active at a time.
-- `!endgame`: ends the current game of Backdoors and Breaches.
-- `!turn <team>`: allows the specified team to take their turn. Can only be used by the team that is currently up.
-- `!place <team> <node>`: allows the specified team to place one of their nodes on the specified node on the game board. Can only be used during the placement phase of the game.
-- `!move <team> <from_node> <to_node>`: allows the specified team to move one of their nodes from the specified node to the specified destination node. Can only be used during the movement phase of the game.
+- `start-game`: Starts a new game by creating a new channel and setting up the necessary roles and permissions.
+- `join-game`: Allows players to join the game by assigning them the "Player" role and granting them access to the game channel.
+- `play-procedure`: Starts the Procedure phase of the game, where players must complete a series of challenges to progress.
+- `play-incident-master`: Starts the Incident Master phase of the game, where players take turns being the Incident Master and directing the other players on how to respond to a simulated incident.
+- `play-c2`: Starts the Command and Control phase of the game, where players take turns being the C2 team and must coordinate with the other players to complete a series of tasks.
+- `play-persistence`: Starts the Persistence phase of the game, where players must find and eliminate a hidden backdoor in the system.
+- `play-pivot`: Starts the Pivot phase of the game, where players must pivot to a different part of the system and continue their investigation.
+- `end-game`: Ends the current game and deletes the game channel and associated roles.
 
+To run a command, type `!` or `/` followed by the command name in the game channel. For example, to start a new game, type `!start-game`. Note that some commands may only be available during certain phases of the game.
 ## Setting up the Bot
 
 ### Using Python
