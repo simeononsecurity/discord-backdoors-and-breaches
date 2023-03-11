@@ -1,4 +1,4 @@
-# Discord Backdoors and Breaches Bot
+# Discord Backdoors and Breaches Bot - Pre Alpha
 
 [![Docker Image CI](https://github.com/simeononsecurity/discord-backdoors-and-breaches/actions/workflows/docker-image.yml/badge.svg)](https://github.com/simeononsecurity/discord-backdoors-and-breaches/actions/workflows/docker-image.yml)
 
