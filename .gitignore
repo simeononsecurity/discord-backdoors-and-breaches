@@ -161,3 +161,4 @@ cython_debug/
 
 #Dont want to accidently publish a discord token
 .ini
+*.ini
