@@ -45,9 +45,9 @@ pivot_and_escalate = pivot_and_escalateData.pivot_and_escalate
 
 '''
 def shuffle_deck():
-	"""Shuffles the incident master deck and procedure deck."""
-	random.shuffle(incident_master_deck)
-	random.shuffle(procedure_deck)
+    """Shuffles the incident master deck and procedure deck."""
+    random.shuffle(incident_master_deck)
+    random.shuffle(procedure_deck)
 '''
 
 game_ended = True
@@ -63,7 +63,7 @@ async def start_game(ctx):
 
     if str(ctx.channel.id) != str(config.config["SETTINGS"]["channel_id"].strip()):
         if str(ctx.channel.id) != str(os.environ.get("CHANNEL_ID")):
-            return await ctx.send("This command can only be used in the designated game channel.")
+            return await ctx.reply("This command can only be used in the designated game channel.")
         
     if ctx.author not in players:
         players.append(ctx.author)
@@ -112,7 +112,7 @@ async def start_game(ctx):
             )
 
     # Start the first player's turn
-    await ctx.send(
+    await ctx.reply(
         f"Starting Backdoors and Breaches game with {len(players)} players... {players[0].mention}'s turn"
     )
 
@@ -127,15 +127,15 @@ async def join_game(ctx):
 
     if str(ctx.channel.id) != str(config.config["SETTINGS"]["channel_id"].strip()):
         if str(ctx.channel.id) != str(os.environ.get("CHANNEL_ID")):
-            return await ctx.send("This command can only be used in the designated game channel.")
+            return await ctx.reply("This command can only be used in the designated game channel.")
 
     if ctx.author not in players:
         players.append(ctx.author)
-        await ctx.send(
+        await ctx.reply(
             f"{ctx.author.mention} has joined the game! {len(players)} players are now playing."
         )
     else:
-        await ctx.send(f"{ctx.author.mention} is already in the game!")
+        await ctx.reply(f"{ctx.author.mention} is already in the game!")
 
 
 @bot.hybrid_command(name="play-procedure", description="Starts Procedure phase, complete challenges.")
@@ -143,16 +143,16 @@ async def play_procedure(ctx, card_name):
     global incident_master_card, turn, players, game_ended, hands, pivot_played, c2_played, persistence_played, procedures, cooldowns, inital_played, failed_rolls
 
     if game_ended:
-        await ctx.send("No game running")
+        return await ctx.reply("No game running")
 
     player = ctx.author
     if player != players[turn]:
-        await ctx.send("It's not your turn!")
+        await ctx.reply("It's not your turn!")
         return
 
     if str(ctx.channel.id) != str(config.config["SETTINGS"]["channel_id"].strip()):
         if str(ctx.channel.id) != str(os.environ.get("CHANNEL_ID")):
-            return await ctx.send("This command can only be used in the designated game channel.")
+            return await ctx.reply("This command can only be used in the designated game channel.")
 
     # Find the current player's hand and incident master card
     player_index = players.index(player)
@@ -164,13 +164,13 @@ async def play_procedure(ctx, card_name):
         if (cooldowns[cardToTurn] + 3) < turn:
             del cooldowns[cardToTurn]
     if card_name in cooldowns:
-        return await ctx.send("Card is on cooldown!")
+        return await ctx.reply("Card is on cooldown!")
 
     try:
         card_index = [card["Title"] for card in hands[ctx.message.author.id]].index(
             card_name
         )
-        # card = hands[ctx.message.author.id].pop(card_index)
+        card = hands[ctx.message.author.id].pop(card_index)
         modifier = 3
         await player.send(
             f"Your hand: {', '.join([card['Title'] for card in hands[ctx.message.author.id]])}"
@@ -178,54 +178,59 @@ async def play_procedure(ctx, card_name):
     except:
         try:
             card_index = [card["Title"] for card in procedures].index(card_name)
-            # card = procedures.pop(card_index)
+            card = procedures.pop(card_index)
             modifier = 0
             await ctx.send(
                 f"Remaining procedures: {', '.join([card['Title'] for card in procedures])}"
             )
         except:
-            await player.send("Invalid card!")
+            await player.reply("Invalid card!")
             return
 
     await ctx.send(player.mention + " Plays card: " + card["Title"])
-    dice_roll = roll_die() + modifier
+    dice_roll_orginal = roll_die()
+    dice_roll = dice_roll_orginal + modifier
+    print("Dice rolled: "+str(dice_roll_orginal)+" Modifier: "+str(modifier))
+    await ctx.send("Dice rolled: "+str(dice_roll_orginal)+" Modifier: "+str(modifier))
     if (dice_roll) > 10:
         fail = True
         for pivot_card in pivot_played:
             if card["Title"] in pivot_card["Detection"]:
                 pivot_played.remove(pivot_card)
-                await ctx.send("Pivot: " + pivot_card["Title"])
+                await ctx.reply("Pivot: " + pivot_card["Title"])
                 fail = False
 
         for c2_card in c2_played:
             if card["Title"] in c2_card["Detection"]:
                 c2_played.remove(c2_card)
-                await ctx.send("C2: " + c2_card["Title"])
+                await ctx.reply("C2: " + c2_card["Title"])
                 fail = False
 
         for persistence_card in persistence_played:
             if card["Title"] in persistence_card["Detection"]:
                 persistence_played.remove(persistence_card)
-                await ctx.send("Persistence: " + persistence_card["Title"])
+                await ctx.reply("Persistence: " + persistence_card["Title"])
                 fail = False
 
         for incident_master_card in inital_played:
             if card["Title"] in incident_master_card["Detection"]:
                 inital_played.remove(incident_master_card)
-                await ctx.send("Initial Incident was: " + incident_master_card["Title"])
+                await ctx.reply("Initial Incident was: " + incident_master_card["Title"])
                 fail = False
 
         if card["Title"] in incident_master_card["Detection"]:
-            await ctx.send("Initial Incident was: " + incident_master_card["Title"])
+            await ctx.reply("Initial Incident was: " + incident_master_card["Title"])
             fail = False
 
         if fail:
             cooldowns[card["Title"]] = turn
+            await ctx.reply("Procedure had no effect")
 
     else:
         failed_rolls = failed_rolls + 1
         cooldowns[card["Title"]] = turn
         print("Procedure failed")
+        await ctx.reply("Procedure failed")
 
     if dice_roll == 1:
         injects_card = injects.pop(0)
@@ -256,28 +261,28 @@ async def play_incident_master(ctx, card_name: str):
     global incident_master_card, turn, players, game_ended, incident_master, hands, c2_and_exfil_card, persistence_card, pivot_and_escalate_card
 
     if game_ended:
-        await ctx.send("No game running")
+        return await ctx.reply("No game running")
 
     # Find the current player's index
     player_index = players.index(ctx.author)
 
     if player_index != 0:
-        await ctx.send("You are not incident master")
+        return await ctx.reply("You are not incident master")
 
     # Check that the player sent a valid command to play an incident master card
     if ctx.author != players[turn]:
-        await ctx.send("It's not your turn!")
+        await ctx.reply("It's not your turn!")
         return
 
     if not (card_name in incident_master_names):
-        await ctx.send("Invalid card!")
+        await ctx.reply("Invalid card!")
         return
 
     card = incident_master_card
     # await ctx.send(f"{ctx.author.mention} played {card['Title']} as the Incident Master card.")
 
     # c2_played.append(card)
-    await ctx.send("Cmd should not be used?")
+    await ctx.reply("Cmd should not be used?")
 
 
 @bot.hybrid_command(name="play-c2", description="Starts Command and Control phase, complete tasks.")
@@ -285,26 +290,26 @@ async def play_c2(ctx, card_name: str):
     global incident_master_card, turn, players, game_ended, incident_master, hands, c2_and_exfil_card, c2_played
 
     if game_ended:
-        await ctx.send("No game running")
+        return await ctx.reply("No game running")
 
     # Find the current player's index
     player_index = players.index(ctx.author)
 
     if player_index != 0:
-        await ctx.send("You are not incident master")
+        return await ctx.reply("You are not incident master")
 
     # Check that the player sent a valid command to play an incident master card
     if ctx.author != players[turn]:
-        await ctx.send("It's not your turn!")
+        await ctx.reply("It's not your turn!")
         return
 
     if not (card_name == c2_and_exfil_card):
-        await ctx.send("Invalid card!")
+        await ctx.reply("Invalid card!")
         return
 
     card = c2_and_exfil_card
     c2_played.append(card)
-    await ctx.send("Card played")
+    await ctx.reply("Card played")
 
 
 @bot.hybrid_command(name="play-persistence", description="Starts Persistence phase, eliminate hidden backdoor.")
@@ -312,26 +317,26 @@ async def play_persistence(ctx, card_name: str):
     global incident_master_card, turn, players, game_ended, incident_master, hands, c2_and_exfil_card, persistence_card, persistence_played
 
     if game_ended:
-        await ctx.send("No game running")
+        return await ctx.reply("No game running")
 
     # Find the current player's index
     player_index = players.index(ctx.author)
 
     if player_index != 0:
-        await ctx.send("You are not incident master")
+        return await ctx.reply("You are not incident master")
 
     # Check that the player sent a valid command to play an incident master card
     if ctx.author != players[turn]:
-        await ctx.send("It's not your turn!")
+        await ctx.reply("It's not your turn!")
         return
 
     if not (card_name == persistence_card):
-        await ctx.send("Invalid card!")
+        await ctx.reply("Invalid card!")
         return
 
     card = persistence_card
     persistence_played.append(card)
-    await ctx.send("Card played")
+    await ctx.reply("Card played")
 
 
 @bot.hybrid_command(name="play-pivot", description="Starts Pivot phase, pivot to different part of system")
@@ -339,26 +344,26 @@ async def play_pivot_and_escalate(ctx, card_name: str):
     global incident_master_card, turn, players, game_ended, incident_master, hands, c2_and_exfil_card, persistence_card, pivot_and_escalate_card, pivot_played
 
     if game_ended:
-        await ctx.send("No game running")
+        return await ctx.reply("No game running")
 
     # Find the current player's index
     player_index = players.index(ctx.author)
 
     if player_index != 0:
-        await ctx.send("You are not incident master")
+        return await ctx.reply("You are not incident master")
 
     # Check that the player sent a valid command to play an incident master card
     if ctx.author != players[turn]:
-        await ctx.send("It's not your turn!")
+        await ctx.reply("It's not your turn!")
         return
 
     if not (card_name == pivot_and_escalate_card):
-        await ctx.send("Invalid card!")
+        await ctx.reply("Invalid card!")
         return
 
     card = pivot_and_escalate_card
     pivot_played.append(card)
-    await ctx.send("Card played")
+    await ctx.reply("Card played")
 
 
 @bot.hybrid_command(name="end-game", description="Ends game, deletes channel and associated roles.")
@@ -379,7 +384,7 @@ async def end_game(ctx):
 
     if str(ctx.channel.id) != str(config.config["SETTINGS"]["channel_id"].strip()):
         if str(ctx.channel.id) != str(os.environ.get("CHANNEL_ID")):
-            return await ctx.send("This command can only be used in the designated game channel.")
+            return await ctx.reply("This command can only be used in the designated game channel.")
 
     game_ended = True
 
@@ -398,7 +403,7 @@ async def end_game(ctx):
     cooldowns = {}
     failed_rolls = 0
 
-    await ctx.send("Game ended")
+    await ctx.reply("Game ended")
 
 @bot.hybrid_command(name="bnbhelp", description="Describes the available commands.")
 async def bnbhelp(ctx):
@@ -415,9 +420,9 @@ async def bnbhelp(ctx):
 - `end-game`: Ends the current game and deletes the game channel and associated roles.
 
 To run a command, type `!` or `/` followed by the command name in the game channel. For example, to start a new game, type `!start-game`. Note that some commands may only be available during certain phases of the game."""
-        await ctx.send(response)
+        await ctx.reply(response)
     except Exception as e:
-        await ctx.send(f"Error: {e}. An unexpected error occurred.")
+        await ctx.reply(f"Error: {e}. An unexpected error occurred.")
 
 @bot.event
 async def on_ready():
