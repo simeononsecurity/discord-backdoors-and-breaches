@@ -1,8 +1,8 @@
 pivot_and_escalate = [
     {
         "Title": "INTERNAL PASSWORD SPRAY",
-        "description": "The attackers start a password spray against the rest of the organization from a compromised system.",
-        "detection": ["User and Entity Behavior Analytics", "SIEM Log Analysis"],
+        "Description": "The attackers start a password spray against the rest of the organization from a compromised system.",
+        "Detection": ["User and Entity Behavior Analytics", "SIEM Log Analysis"],
         "tools": ["Domain Password Spray"],
         "documentation": [
             "https://github.com/dafthack/DomainPasswordSpray",
@@ -11,8 +11,8 @@ pivot_and_escalate = [
     },
     {
         "Title": "KERBEROASTING",
-        "description": "The attackers use a feature of SPNs to extract and crack service passwords.",
-        "detection": [
+        "Description": "The attackers use a feature of SPNs to extract and crack service passwords.",
+        "Detection": [
             "SIEM Log Analysis",
             "User and Entity Behavior Analytics",
             "Honey Services",
@@ -26,8 +26,8 @@ pivot_and_escalate = [
     },
     {
         "Title": "WEAPONIZING ACTIVE DIRECTORY",
-        "description": "The attackers map trust relationships and user/group privileges in your Active Directory Network.",
-        "detection": [
+        "Description": "The attackers map trust relationships and user/group privileges in your Active Directory Network.",
+        "Detection": [
             "SIEM Log Analysis",
             "User and Entity Behavior Analytics",
             "Internal Segmentation",
@@ -42,8 +42,8 @@ pivot_and_escalate = [
     },
     {
         "Title": "CREDENTIAL STUFFING",
-        "description": "Valid Active Directory credentials have been discovered on open shares and files within your environment. These are used by the attackers.",
-        "detection": [
+        "Description": "Valid Active Directory credentials have been discovered on open shares and files within your environment. These are used by the attackers.",
+        "Detection": [
             "SIEM Log Analysis",
             "User and Entity Behavior Analytics",
             "Internal Segmentation",
@@ -62,22 +62,22 @@ pivot_and_escalate = [
     },
     {
         "Title": "NEW SERVICE CREATION",
-        "description": "The attackers create and load their malware using a service with SYSTEM privileges. Or, they just create a new service.",
-        "detection": ["Endpoint Analysis", "Endpoint Security Protection Analysis"],
+        "Description": "The attackers create and load their malware using a service with SYSTEM privileges. Or, they just create a new service.",
+        "Detection": ["Endpoint Analysis", "Endpoint Security Protection Analysis"],
         "tools": ["Metasploit getsystem and other Post-Exploitation Scripts"],
         "documentation": "https://www.metasploit.com",
     },
     {
         "Title": "LOCAL PRIVILEGE ESCALATION",
-        "description": "The attackers use a vulnerability in local software to gain administrative access.",
-        "detection": ["Endpoint Analysis", "Endpoint Security Protection Analysis"],
+        "Description": "The attackers use a vulnerability in local software to gain administrative access.",
+        "Detection": ["Endpoint Analysis", "Endpoint Security Protection Analysis"],
         "tools": ["PowerSploit's PowerUp", "Meterpreter Post-Exploitation Scripts"],
         "documentation": "https://www.blackhillsinfosec.com/powershell-without-powershell-how-to-bypass-application-whitelisting-environment-restrictions-av",
     },
     {
         "Title": "BROADCAST/MULTICAST PROTOCOL POISONING",
-        "description": "For years, LANMAN was the worst thing in Windows. Then LLMNR said Stand Back and Hold My Beer! Basically, LLMNR lets a host ask for name resolution from any system on the same network. The attackers perform Broadcast/Multicast protocol poisoning on your Active Directory Network.",
-        "detection": [
+        "Description": "For years, LANMAN was the worst thing in Windows. Then LLMNR said Stand Back and Hold My Beer! Basically, LLMNR lets a host ask for name resolution from any system on the same network. The attackers perform Broadcast/Multicast protocol poisoning on your Active Directory Network.",
+        "Detection": [
             "CredDefense Toolkit",
             "User and Entity Behavior Analytics",
             "Firewall Log Review",
