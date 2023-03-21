@@ -543,27 +543,4 @@ async def on_ready():
 	except Exception as e:
 		print(e)
 
-	await bot.change_presence(
-		activity=Activity(
-			type=ActivityType.playing, name="Backdoors and Breaches"
-		),
-		status=Status.online,
-	)
- + "&permissions=8&scope=bot%20applications.commands"
-    )
-    print("Time now", str(datetime.datetime.now()))
-    
-    try:
-        synced = await bot.tree.sync()
-        print(f"Synced {len(synced)} command(s)")
-    except Exception as e:
-        print(e)
-
-    await bot.change_presence(
-        activity=Activity(
-            type=ActivityType.playing, name="Backdoors and Breaches"
-        ),
-        status=Status.online,
-    )
-
 bot.run(config.discordtoken)
