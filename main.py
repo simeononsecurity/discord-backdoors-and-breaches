@@ -639,9 +639,11 @@ async def bnbhelp(ctx):
 	try:
 		response = """## Available Commands
 
-- `start-game`: Starts a new game by creating a new channel and setting up the necessary roles and permissions.
+- `setup-game`: Creates a game id and sets all the needed variables.
+- `start-game`: Starts a new game should be run my incident master only after `setup-game`
 - `join-game`: Allows players to join the game by assigning them the "Player" role and granting them access to the game channel.
 - `play-procedure`: Starts the Procedure phase of the game, where players must complete a series of challenges to progress.
+- `play-incident-master`: Starts the Incident Master phase of the game, where players take turns being the Incident Master and directing the other players on how to respond to a simulated incident.
 - `play-c2`: Starts the Command and Control phase of the game, where players take turns being the C2 team and must coordinate with the other players to complete a series of tasks.
 - `play-persistence`: Starts the Persistence phase of the game, where players must find and eliminate a hidden backdoor in the system.
 - `play-pivot`: Starts the Pivot phase of the game, where players must pivot to a different part of the system and continue their investigation.
