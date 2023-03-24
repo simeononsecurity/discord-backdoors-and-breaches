@@ -16,6 +16,8 @@ import cards.persistence as persistenceData
 import cards.injects as injectsData
 import cards.pivot_and_escalate as pivot_and_escalateData
 
+import time
+
 #tracemalloc
 import tracemalloc
 tracemalloc.start()
@@ -24,27 +26,34 @@ intents = discord.Intents.all()
 intents.message_content = True
 bot = commands.Bot(command_prefix=["!", "/"], intents=intents)
 
-players = []
-procedures = []
-incident_master = []
-played_cards = []
-incident_master_names = []
-pivot_played = []
-c2_played = []
-persistence_played = []
-inital_played = []
-turn = 0
+first_start = True
+
+games = {}
+players = {}
+procedures = {}
+incident_master = {}
+played_cards = {}
+incident_master_names = {}
+pivot_played = {}
+c2_played = {}
+persistence_played = {}
+inital_played = {}
+turn = {}
 hands = {}
 cooldowns = {}
 card_modifiers = {}
-failed_rolls = 0
+failed_rolls = {}
+game_ended = {}
 
-procedures = proceduresData.Procedures
-incident_master = incident_masterData.initial_compromise
-c2_and_exfil = c2Data.C2
-persistence = persistenceData.Persistence
-injects = injectsData.Injects
-pivot_and_escalate = pivot_and_escalateData.pivot_and_escalate
+c2_and_exfil = {}
+persistence = {}
+injects = {}
+pivot_and_escalate = {}
+
+incident_master_card = {}
+c2_and_exfil_card = {}
+persistence_card = {}
+pivot_and_escalate_card = {}
 
 '''
 def shuffle_deck():
@@ -53,13 +62,66 @@ def shuffle_deck():
 	random.shuffle(procedure_deck)
 '''
 
-game_ended = True
-
 
 def roll_die():
 	return random.randint(1, 20)
 
-
+def find_game_id(user_id):
+	global players
+	
+	user_id = int(user_id)
+	game_id = None
+	
+	for game_id in players:
+		for player in players[game_id]:
+			if player.id == user_id:
+				return game_id
+			
+	return game_id
+		
+		
+@bot.hybrid_command(name="setup-game", description="Sets up a new game, the person who runs this will become incident master.")
+async def setup_game(ctx):
+	global players, procedures, incident_master, incident_master_names, c2_and_exfil, persistence, injects, pivot_and_escalate, incident_master_card, game_ended, hands, c2_and_exfil_card, persistence_card, pivot_and_escalate_card, inital_played
+	await ctx.defer()
+	
+	game_id = find_game_id(ctx.author.id)
+	if game_id:
+		return await ctx.reply(f"You are already in game id {str(game_id)}.")
+	
+	game_id = str(int(time.time())) #Will enable some sorting
+	games[game_id] = {}
+	
+	players[game_id] = []
+	procedures[game_id] = []
+	incident_master[game_id] = []
+	played_cards[game_id] = []
+	incident_master_names[game_id] = []
+	pivot_played[game_id] = []
+	c2_played[game_id] = []
+	persistence_played[game_id] = []
+	inital_played[game_id] = []
+	turn[game_id] = 0
+	hands[game_id] = {}
+	cooldowns[game_id] = {}
+	card_modifiers[game_id] = {}
+	failed_rolls[game_id] = 0
+	game_ended[game_id] = True
+	
+	procedures[game_id] = proceduresData.Procedures
+	incident_master[game_id] = incident_masterData.initial_compromise
+	c2_and_exfil[game_id] = c2Data.C2
+	persistence[game_id] = persistenceData.Persistence
+	injects[game_id] = injectsData.Injects
+	pivot_and_escalate[game_id] = pivot_and_escalateData.pivot_and_escalate
+	
+	if ctx.author not in players[game_id]:
+		players[game_id].append(ctx.author)
+	
+	await ctx.reply(
+		embed=discord.Embed(title="Backdoors and Breaches",description=f"Game with id {str(game_id)} set up, use /join-game {str(game_id)}  to join."
+	))
+	
 @bot.hybrid_command(name="start-game", description="Begins a game, sets up channel, roles, permissions.")
 async def start_game(ctx):
 	global players, procedures, incident_master, incident_master_names, c2_and_exfil, persistence, injects, pivot_and_escalate, incident_master_card, game_ended, hands, c2_and_exfil_card, persistence_card, pivot_and_escalate_card, inital_played
@@ -69,30 +131,34 @@ async def start_game(ctx):
 	if str(ctx.channel.id) != str(config.config["SETTINGS"]["channel_id"].strip()):
 		if str(ctx.channel.id) != str(os.environ.get("CHANNEL_ID")):
 			return await ctx.reply("This command can only be used in the designated game channel.")
+	
+	game_id = find_game_id(ctx.author.id)
+	if not game_id:
+		return await ctx.reply("You are not in a game.")
+	
+	if not game_ended[game_id]:
+		return await ctx.reply("Game already started.")
 		
-	if ctx.author not in players:
-		players.append(ctx.author)
-
-	game_ended = False
+	game_ended[game_id] = False
 
 	# Shuffle procedures and incident master decks
-	random.shuffle(procedures)
-	random.shuffle(incident_master)
+	random.shuffle(procedures[game_id])
+	random.shuffle(incident_master[game_id])
 
-	random.shuffle(c2_and_exfil)
-	random.shuffle(persistence)
-	random.shuffle(injects)
-	random.shuffle(pivot_and_escalate)
+	random.shuffle(c2_and_exfil[game_id])
+	random.shuffle(persistence[game_id])
+	random.shuffle(injects[game_id])
+	random.shuffle(pivot_and_escalate[game_id])
 
-	incident_master_names = [card["Title"] for card in incident_master]
+	incident_master_names = [card["Title"] for card in incident_master[game_id]]
 
 	# Deal cards to players
-	for i, player in enumerate(players):
+	for i, player in enumerate(players[game_id]):
 		hand = []
 		if i != 0:
 			for i in range(0, 4):
 				hand.append(procedures.pop(0))
-			hands[player.id] = hand
+			hands[game_id][player.id] = hand
 			await player.send(embed=discord.Embed(title="Backdoors and Breaches",description="Your hand:\n {}".format('\n\n'.join([format_card_info(card) for card in hand]))))
 			await ctx.send(embed=discord.Embed(title="Backdoors and Breaches",description="{} hand:\n {}".format(ctx.author.mention,'\n\n'.join([format_card_info(card) for card in hand]))))
 
@@ -101,44 +167,47 @@ async def start_game(ctx):
 
 		if i == 0:
 			cards_to_send = "\n\n"
-			incident_master_card = incident_master.pop(0)
-			inital_played.append(incident_master_card)
+			incident_master_card[game_id] = incident_master[game_id].pop(0)
+			inital_played[game_id].append(incident_master_card[game_id])
 			#await player.send(embed=discord.Embed(title="Backdoors and Breaches",description=f"Incident Master card: {incident_master_card['Title']}"))
-			cards_to_send = cards_to_send + "Incident Master card:\n"+format_card_info(incident_master_card)+"\n"
-			c2_and_exfil_card = c2_and_exfil.pop(0)
+			cards_to_send = cards_to_send + "Incident Master card:\n"+format_card_info(incident_master_card[game_id])+"\n"
+			c2_and_exfil_card[game_id] = c2_and_exfil[game_id].pop(0)
 			#await player.send(embed=discord.Embed(title="Backdoors and Breaches",description=f"C2 and Exfil card: {c2_and_exfil_card['Title']}"))
-			cards_to_send = cards_to_send + "C2 and Exfil card:\n"+format_card_info(c2_and_exfil_card)+"\n"
-			persistence_card = persistence.pop(0)
-			cards_to_send = cards_to_send + "Persistence card:\n"+format_card_info(persistence_card)+"\n"
+			cards_to_send = cards_to_send + "C2 and Exfil card:\n"+format_card_info(c2_and_exfil_card[game_id])+"\n"
+			persistence_card[game_id] = persistence[game_id].pop(0)
+			cards_to_send = cards_to_send + "Persistence card:\n"+format_card_info(persistence_card[game_id])+"\n"
 			#await player.send(embed=discord.Embed(title="Backdoors and Breaches",description=f"Persistence card: {persistence_card['Title']}"))
-			pivot_and_escalate_card = pivot_and_escalate.pop(0)
-			cards_to_send = cards_to_send + "Pivot and Escalate card:\n"+format_card_info(pivot_and_escalate_card)+"\n"
+			pivot_and_escalate_card[game_id] = pivot_and_escalate[game_id].pop(0)
+			cards_to_send = cards_to_send + "Pivot and Escalate card:\n"+format_card_info(pivot_and_escalate_card[game_id])+"\n"
 			await player.send(
 				embed=discord.Embed(title="Backdoors and Breaches",description=f"Your hand: {cards_to_send}"
 			))
 
 	# Start the first player's turn
 	await ctx.reply(
-		embed=discord.Embed(title="Backdoors and Breaches",description=f"Starting Backdoors and Breaches game with {len(players)} players... {players[0].mention}'s turn"
+		embed=discord.Embed(title="Backdoors and Breaches",description=f"Starting Backdoors and Breaches game with {len(players[game_id])} players... {players[game_id][0].mention}'s turn"
 	))
 
 	await ctx.send(
-		embed=discord.Embed(title="Backdoors and Breaches",description="Remaining procedures cards:\n\n {}".format('\n\n'.join([format_card_info(card) for card in procedures]))
+		embed=discord.Embed(title="Backdoors and Breaches",description="Remaining procedures cards:\n\n {}".format('\n\n'.join([format_card_info(card) for card in procedures[game_id]]))
 	))
 
 
 @bot.hybrid_command(name="join-game", description="Lets players join by assigning roles, channel access.")
-async def join_game(ctx):
+async def join_game(ctx,game_id):
 	global players
-
+	
+	if not game_id in players:
+		return await ctx.reply("Invalid game id.")
+	
 	if str(ctx.channel.id) != str(config.config["SETTINGS"]["channel_id"].strip()):
 		if str(ctx.channel.id) != str(os.environ.get("CHANNEL_ID")):
 			return await ctx.reply("This command can only be used in the designated game channel.")
 
-	if ctx.author not in players:
-		players.append(ctx.author)
+	if ctx.author not in players[game_id]:
+		players[game_id].append(ctx.author)
 		await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description=
-			f"{ctx.author.mention} has joined the game! {len(players)} players are now playing."
+			f"{ctx.author.mention} has joined the game! {len(players[game_id])} players are now playing."
 		))
 	else:
 		await ctx.reply(f"{ctx.author.mention} is already in the game!")
@@ -148,32 +217,52 @@ async def valid_cards_procedures(interaction: discord.Interaction, card_name: st
 	global procedures
 	global hands
 	
+	game_id = find_game_id(interaction.user.id)
+	if not game_id:
+		print("Not in a game")
+		return []
+	
 	hand = []
 	validCards = []
-	if interaction.user.id in hands:
+	if interaction.user.id in hands[game_id]:
 		hand = hands[interaction.user.id]
-	validCards = procedures + hand
+	validCards = procedures[game_id] + hand
 	
 	return [app_commands.Choice(name=card["Title"].lower().capitalize(), value=card["Title"]) for card in validCards]
 
 async def valid_cards_c2(interaction: discord.Interaction, card_name: str) -> List[app_commands.Choice[str]]:
 	global c2_and_exfil_card
 	
-	validCards = [c2_and_exfil_card]
+	game_id = find_game_id(interaction.user.id)
+	if not game_id:
+		print("Not in a game")
+		return []
+	
+	validCards = [c2_and_exfil_card[game_id]]
 	
 	return [app_commands.Choice(name=card["Title"].lower().capitalize(), value=card["Title"]) for card in validCards]
 
 async def valid_cards_persistence(interaction: discord.Interaction, card_name: str) -> List[app_commands.Choice[str]]:
 	global persistence_card
 	
-	validCards = [persistence_card]
+	game_id = find_game_id(interaction.user.id)
+	if not game_id:
+		print("Not in a game")
+		return []
+	
+	validCards = [persistence_card[game_id]]
 	
 	return [app_commands.Choice(name=card["Title"].lower().capitalize(), value=card["Title"]) for card in validCards]
 
 async def valid_cards_pivot(interaction: discord.Interaction, card_name: str) -> List[app_commands.Choice[str]]:
 	global pivot_and_escalate_card
 	
-	validCards = [pivot_and_escalate_card]
+	game_id = find_game_id(interaction.user.id)
+	if not game_id:
+		print("Not in a game")
+		return []
+	
+	validCards = [pivot_and_escalate_card[game_id]]
 	
 	return [app_commands.Choice(name=card["Title"].lower().capitalize(), value=card["Title"]) for card in validCards]
 
@@ -183,26 +272,26 @@ def format_card_info(card):
 	
 	return cardInfo
 
-def handle_extra_modifiers(card):
+def handle_extra_modifiers(card,game_id):
 	global card_modifiers
-	if card["Title"] in card_modifiers:
-		modifier = modifier + card_modifiers[card["Title"]]
+	if card["Title"] in card_modifiers[game_id]:
+		modifier = modifier + card_modifiers[game_id][card["Title"]]
 	
 	modifier = 0
 	return modifier
 
-async def handle_injects(ctx,card):
+async def handle_injects(ctx,card,game_id):
 	global pivot_and_escalate_card
 	global card_modifiers
 	global procedures
 	
 	if card["Title"] == "HONEYPOTS DEPLOYED":
 		await ctx.send(embed=discord.Embed(title="Backdoors and Breaches",description=format_card_info(card)))
-		await ctx.send(embed=discord.Embed(title="Backdoors and Breaches",description=format_card_info(pivot_and_escalate_card)))
+		await ctx.send(embed=discord.Embed(title="Backdoors and Breaches",description=format_card_info(pivot_and_escalate_card[game_id])))
 		
 	elif card["Title"] == "IT WAS A PENTEST":
 		await ctx.send(embed=discord.Embed(title="Backdoors and Breaches",description=format_card_info(card)))
-		await end_game(ctx)
+		#await end_game(ctx)
 		
 	elif card["Title"] == "MANAGEMENT HAS JUST APPROVED THE RELEASE OF A NEW PROCEDURE":
 		card_modifiers["WHAT_CARDS_SHOULD_THIS_AFFECT?"] = 3 #Add the valid cards
@@ -232,18 +321,22 @@ async def handle_injects(ctx,card):
 	
 	elif card["Title"] == "TAKE ONE PROCEDURE CARD AWAY":
 		await ctx.send(embed=discord.Embed(title="Backdoors and Breaches",description=format_card_info(card)))
-		card_removed = procedures.pop()
+		card_removed = procedures[game_id].pop()
 	
 @bot.hybrid_command(name="play-procedure", description="Starts Procedure phase, complete challenges.")
 @app_commands.autocomplete(card_name=valid_cards_procedures)
 async def play_procedure(ctx, card_name: str):
 	global incident_master_card, turn, players, game_ended, hands, pivot_played, c2_played, persistence_played, procedures, cooldowns, inital_played, failed_rolls
-
-	if game_ended:
+	
+	game_id = find_game_id(ctx.author.id)
+	if not game_id:
+		return await ctx.reply("You are not in a game.")
+	
+	if game_ended[game_id]:
 		return await ctx.reply("No game running")
 
 	player = ctx.author
-	if player != players[turn]:
+	if player != players[game_id][turn]:
 		await ctx.reply("It's not your turn!")
 		return
 
@@ -252,30 +345,30 @@ async def play_procedure(ctx, card_name: str):
 			return await ctx.reply("This command can only be used in the designated game channel.")
 
 	# Find the current player's hand and incident master card
-	player_index = players.index(player)
+	player_index = players[game_id].index(player)
 
 	# Find the card to play and remove it from the player's hand or procedures
 	modifier = 0
 	playerCard = False
-	for cardToTurn in cooldowns.copy():
-		if (cooldowns[cardToTurn] + 3) < turn:
-			del cooldowns[cardToTurn]
-	if card_name in cooldowns:
+	for cardToTurn in cooldowns[game_id].copy():
+		if (cooldowns[game_id][cardToTurn] + 3) < turn:
+			del cooldowns[game_id][cardToTurn]
+	if card_name in cooldowns[game_id]:
 		return await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Card is on cooldown!"))
 
 	try:
-		card_index = [card["Title"] for card in hands[ctx.message.author.id]].index(
+		card_index = [card["Title"] for card in hands[game_id][ctx.message.author.id]].index(
 			card_name
 		)
-		card = hands[ctx.message.author.id].pop(card_index)
+		card = hands[game_id][ctx.message.author.id].pop(card_index)
 		modifier = 3
 		await player.send(embed=discord.Embed(title="Backdoors and Breaches",description=
-			"Your hand:\n {}".format(',\n'.join([card['Title'] for card in hands[ctx.message.author.id]]))
+			"Your hand:\n {}".format(',\n'.join([card['Title'] for card in hands[game_id][ctx.message.author.id]]))
 		))
 	except:
 		try:
-			card_index = [card["Title"] for card in procedures].index(card_name)
-			card = procedures.pop(card_index)
+			card_index = [card["Title"] for card in procedures[game_id]].index(card_name)
+			card = procedures[game_id].pop(card_index)
 			modifier = 0
 			await ctx.send(
 				embed=discord.Embed(title="Backdoors and Breaches",description="Remaining procedures:\n {}".format(',\n'.join([card['Title'] for card in procedures]))
@@ -291,65 +384,65 @@ async def play_procedure(ctx, card_name: str):
 	await ctx.send(embed=discord.Embed(title="Backdoors and Breaches",description="Dice rolled: "+str(dice_roll_orginal)+" Modifier: "+str(modifier)))
 	if (dice_roll) > 10:
 		fail = True
-		for pivot_card in pivot_played:
+		for pivot_card in pivot_played[game_id]:
 			if card["Title"] in pivot_card["Detection"]:
-				pivot_played.remove(pivot_card)
+				pivot_played[game_id].remove(pivot_card)
 				await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Pivot: " + pivot_card["Title"]))
 				fail = False
 
-		for c2_card in c2_played:
+		for c2_card in c2_played[game_id]:
 			if card["Title"] in c2_card["Detection"]:
-				c2_played.remove(c2_card)
+				c2_played[game_id].remove(c2_card)
 				await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="C2: " + c2_card["Title"]))
 				fail = False
 
-		for persistence_card in persistence_played:
+		for persistence_card in persistence_played[game_id]:
 			if card["Title"] in persistence_card["Detection"]:
-				persistence_played.remove(persistence_card)
+				persistence_played[game_id].remove(persistence_card)
 				await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Persistence: " + persistence_card["Title"]))
 				fail = False
 
-		for incident_master_card in inital_played:
+		for incident_master_card in inital_played[game_id]:
 			if card["Title"] in incident_master_card["Detection"]:
-				inital_played.remove(incident_master_card)
+				inital_played[game_id].remove(incident_master_card)
 				await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Initial Incident was: " + incident_master_card["Title"]))
 				fail = False
 
-		if card["Title"] in incident_master_card["Detection"]:
-			await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Initial Incident was: " + incident_master_card["Title"]))
+		if card["Title"] in incident_master_card[game_id]["Detection"]:
+			await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Initial Incident was: " + incident_master_card[game_id]["Title"]))
 			fail = False
 
 		if fail:
-			cooldowns[card["Title"]] = turn
+			cooldowns[game_id][card["Title"]] = turn
 			await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Procedure had no effect"))
 
 	else:
 		failed_rolls = failed_rolls + 1
-		cooldowns[card["Title"]] = turn
+		cooldowns[game_id][card["Title"]] = turn
 		print("Procedure failed")
 		await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Procedure failed"))
 
 	if dice_roll == 1:
-		injects_card = injects.pop(0)
+		injects_card = injects[game_id].pop(0)
 		await handle_injects(ctx,injects_card)
 	elif failed_rolls > 2:
 		failed_rolls = 0
-		injects_card = injects.pop(0)
+		injects_card = injects[game_id].pop(0)
 		await handle_injects(ctx,injects_card)
 
-	if len(persistence_played) == 0:
-		if len(c2_played) == 0:
-			if len(pivot_played) == 0:
-				if len(inital_played) == 0:
-					game_ended = True
+	if len(persistence_played[game_id]) == 0:
+		if len(c2_played[game_id]) == 0:
+			if len(pivot_played[game_id]) == 0:
+				if len(inital_played[game_id]) == 0:
+					game_ended[game_id] = True
 
 	# Check if the game has ended
-	turn = (turn + 1) % len(players)
-	if turn > 10:
-		game_ended = True
+	turn = (turn + 1) % len(players[game_id])
+	if turn[game_id] > 10:
+		game_ended[game_id] = True
 
-	if game_ended:
-		await end_game(ctx)
+	if game_ended[game_id]:
+		await end_game(ctx,game_id)
 		return
 
 '''
@@ -386,27 +479,31 @@ async def play_incident_master(ctx, card_name: str):
 @app_commands.autocomplete(card_name=valid_cards_c2)
 async def play_c2(ctx, card_name: str):
 	global incident_master_card, turn, players, game_ended, incident_master, hands, c2_and_exfil_card, c2_played
-
-	if game_ended:
+	
+	game_id = find_game_id(ctx.author.id)
+	if not game_id:
+		return await ctx.reply("You are not in a game.")
+	
+	if game_ended[game_id]:
 		return await ctx.reply("No game running")
 
 	# Find the current player's index
-	player_index = players.index(ctx.author)
+	player_index = players[game_id].index(ctx.author)
 
 	if player_index != 0:
 		return await ctx.reply("You are not incident master")
 
 	# Check that the player sent a valid command to play an incident master card
-	if ctx.author != players[turn]:
+	if ctx.author != players[game_id][turn]:
 		await ctx.reply("It's not your turn!")
 		return
 
-	if not (card_name == c2_and_exfil_card["Title"]):
+	if not (card_name == c2_and_exfil_card[game_id]["Title"]):
 		await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Invalid card!"))
 		return
 
-	card = c2_and_exfil_card
-	c2_played.append(card)
+	card = c2_and_exfil_card[game_id]
+	c2_played[game_id].append(card)
 	await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Card played"))
 
 
@@ -414,27 +511,31 @@ async def play_c2(ctx, card_name: str):
 @app_commands.autocomplete(card_name=valid_cards_persistence)
 async def play_persistence(ctx, card_name: str):
 	global incident_master_card, turn, players, game_ended, incident_master, hands, persistence_card, persistence_played
-
-	if game_ended:
+	
+	game_id = find_game_id(ctx.author.id)
+	if not game_id:
+		return await ctx.reply("You are not in a game.")
+	
+	if game_ended[game_id]:
 		return await ctx.reply("No game running")
 
 	# Find the current player's index
-	player_index = players.index(ctx.author)
+	player_index = players[game_id].index(ctx.author)
 
 	if player_index != 0:
 		return await ctx.reply("You are not incident master")
 
 	# Check that the player sent a valid command to play an incident master card
-	if ctx.author != players[turn]:
+	if ctx.author != players[game_id][turn]:
 		await ctx.reply("It's not your turn!")
 		return
 
-	if not (card_name == persistence_card["Title"]):
+	if not (card_name == persistence_card[game_id]["Title"]):
 		await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Invalid card!"))
 		return
 
-	card = persistence_card
-	persistence_played.append(card)
+	card = persistence_card[game_id]
+	persistence_played[game_id].append(card)
 	await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Card played"))
 
 
@@ -442,32 +543,36 @@ async def play_persistence(ctx, card_name: str):
 @app_commands.autocomplete(card_name=valid_cards_pivot)
 async def play_pivot_and_escalate(ctx, card_name: str):
 	global incident_master_card, turn, players, game_ended, incident_master, hands, pivot_and_escalate_card, pivot_played
-
-	if game_ended:
+	
+	game_id = find_game_id(ctx.author.id)
+	if not game_id:
+		return await ctx.reply("You are not in a game.")
+	
+	if game_ended[game_id]:
 		return await ctx.reply("No game running")
 
 	# Find the current player's index
-	player_index = players.index(ctx.author)
+	player_index = players[game_id].index(ctx.author)
 
 	if player_index != 0:
 		return await ctx.reply("You are not incident master")
 
 	# Check that the player sent a valid command to play an incident master card
-	if ctx.author != players[turn]:
+	if ctx.author != players[game_id][turn]:
 		await ctx.reply("It's not your turn!")
 		return
 
-	if not (card_name == pivot_and_escalate_card["Title"]):
+	if not (card_name == pivot_and_escalate_card[game_id]["Title"]):
 		await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Invalid card!"))
 		return
 
-	card = pivot_and_escalate_card
-	pivot_played.append(card)
+	card = pivot_and_escalate_card[game_id]
+	pivot_played[game_id].append(card)
 	await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Card played"))
 
 
 @bot.hybrid_command(name="end-game", description="Ends game, deletes channel and associated roles.")
-async def end_game(ctx):
+async def end_game(ctx,game_id):
 	global players
 	global procedures
 	global incident_master
@@ -482,30 +587,52 @@ async def end_game(ctx):
 	global inital_played
 	global failed_rolls
 	global card_modifiers
-
-	if str(ctx.channel.id) != str(config.config["SETTINGS"]["channel_id"].strip()):
-		if str(ctx.channel.id) != str(os.environ.get("CHANNEL_ID")):
-			return await ctx.reply("This command can only be used in the designated game channel.")
-
-	game_ended = True
+	global games
+	
+	if not game_id in players:
+		if ctx:
+			return await ctx.reply("Invalid game id.")
+	
+	if ctx:
+		if str(ctx.channel.id) != str(config.config["SETTINGS"]["channel_id"].strip()):
+			if str(ctx.channel.id) != str(os.environ.get("CHANNEL_ID")):
+				return await ctx.reply("This command can only be used in the designated game channel.")
+	
+	if ctx:
+		if not players[game_id][0] == ctx.author:
+			return await ctx.reply("Only incident master can use this command.")
+	
+	print(f"Ending game {str(game_id)} manually")
+	del game_ended[game_id]
 
 	# Reset game variables
-	players = []
-	procedures = []
-	incident_master = []
-	played_cards = []
-	incident_master_names = []
-	turn = 0
-	hands = {}
-	pivot_played = []
-	c2_played = []
-	persistence_played = []
-	inital_played = []
-	cooldowns = {}
-	card_modifiers = {}
-	failed_rolls = 0
+	del players[game_id]
+	del procedures[game_id]
+	del incident_master[game_id]
+	del played_cards[game_id]
+	del incident_master_names[game_id]
+	del turn[game_id]
+	del hands[game_id]
+	del pivot_played[game_id]
+	del c2_played[game_id]
+	del persistence_played[game_id]
+	del inital_played[game_id]
+	del cooldowns[game_id]
+	del card_modifiers[game_id]
+	del failed_rolls[game_id]
+	
+	del c2_and_exfil[game_id]
+	del persistence[game_id]
+	del injects[game_id]
+	del pivot_and_escalate[game_id]
 
-	await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Game ended"))
+	del incident_master_card[game_id]
+	del c2_and_exfil_card[game_id]
+	del persistence_card[game_id]
+	del pivot_and_escalate_card[game_id]
+	
+	if ctx:
+		await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Game ended"))
 
 @bot.hybrid_command(name="bnbhelp", description="Describes the available commands.")
 async def bnbhelp(ctx):
@@ -525,8 +652,21 @@ To run a command, type `!` or `/` followed by the command name in the game chann
 	except Exception as e:
 		await ctx.reply(f"Error: {e}. An unexpected error occurred.")
 
+@tasks.loop(seconds=3600.0)
+async def check_games():
+	global players
+	print("Starting check games task")
+	
+	now = int(time.time())
+	for game_id in players:
+		if (int(now)) > (int(game_id)+86400):
+			print(f"Ending game {str(game_id)} automatically")
+			await end_game(None,game_id)
+	
 @bot.event
 async def on_ready():
+	global first_start
+	
 	print("\nLogged in as:")
 	print(" Username", bot.user.name)
 	print(" User ID", bot.user.id)
@@ -537,10 +677,15 @@ async def on_ready():
 	)
 	print("Time now", str(datetime.datetime.now()))
 	
-	try:
-		synced = await bot.tree.sync()
-		print(f"Synced {len(synced)} command(s)")
-	except Exception as e:
-		print(e)
+	# on_ready event can fire more than once
+	if first_start:
+		try:
+			synced = await bot.tree.sync()
+			print(f"Synced {len(synced)} command(s)")
+		except Exception as e:
+			print(e)
+		
+		await check_games.start()
+		first_start = False
 
 bot.run(config.discordtoken)
