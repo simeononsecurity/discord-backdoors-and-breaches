@@ -21,6 +21,7 @@ pip list
 
 # Set the environment variable for the bot token
 ENV BOT_TOKEN=${BOT_TOKEN}
+ENV CHANNEL_ID=${CHANNEL_ID}
 
 # Run app.py when the container launches
 CMD ["python", "main.py"]
