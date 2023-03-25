@@ -4,6 +4,7 @@ import config
 import datetime
 from discord import Activity, ActivityType, Status, app_commands
 from discord.ext import commands, tasks
+import os
 
 from typing import Literal, Union, NamedTuple, List
 from enum import Enum
