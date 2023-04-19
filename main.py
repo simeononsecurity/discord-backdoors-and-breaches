@@ -4,6 +4,7 @@ import config
 import datetime
 from discord import Activity, ActivityType, Status, app_commands
 from discord.ext import commands, tasks
+import os
 
 from typing import Literal, Union, NamedTuple, List
 from enum import Enum
@@ -82,7 +83,7 @@ def find_game_id(user_id):
 		
 @bot.hybrid_command(name="setup-game", description="Sets up a new game, the person who runs this will become incident master.")
 async def setup_game(ctx):
-	global players, procedures, incident_master, incident_master_names, c2_and_exfil, persistence, injects, pivot_and_escalate, incident_master_card, game_ended, hands, c2_and_exfil_card, persistence_card, pivot_and_escalate_card, inital_played
+	global turn, players, procedures, incident_master, incident_master_names, c2_and_exfil, persistence, injects, pivot_and_escalate, incident_master_card, game_ended, hands, c2_and_exfil_card, persistence_card, pivot_and_escalate_card, inital_played
 	await ctx.defer()
 	
 	game_id = find_game_id(ctx.author.id)
@@ -150,8 +151,9 @@ async def start_game(ctx):
 	random.shuffle(injects[game_id])
 	random.shuffle(pivot_and_escalate[game_id])
 
-	incident_master_names = [card["Title"] for card in incident_master[game_id]]
-
+	incident_master_names[game_id] = [card["Title"] for card in incident_master[game_id]]
+	master_cards_to_send = ""
+	
 	# Deal cards to players
 	for i, player in enumerate(players[game_id]):
 		hand = []
@@ -159,7 +161,13 @@ async def start_game(ctx):
 			for i in range(0, 4):
 				hand.append(procedures.pop(0))
 			hands[game_id][player.id] = hand
-			await player.send(embed=discord.Embed(title="Backdoors and Breaches",description="Your hand:\n {}".format('\n\n'.join([format_card_info(card) for card in hand]))))
+			
+			
+			try: #Try and dm hand but skip if cant dm
+				await player.send(embed=discord.Embed(title="Backdoors and Breaches",description="Your hand:\n {}".format('\n\n'.join([format_card_info(card) for card in hand]))))
+			except:
+				pass
+			
 			await ctx.send(embed=discord.Embed(title="Backdoors and Breaches",description="{} hand:\n {}".format(ctx.author.mention,'\n\n'.join([format_card_info(card) for card in hand]))))
 
 		# injects_card = injects.pop(0)
@@ -179,19 +187,24 @@ async def start_game(ctx):
 			#await player.send(embed=discord.Embed(title="Backdoors and Breaches",description=f"Persistence card: {persistence_card['Title']}"))
 			pivot_and_escalate_card[game_id] = pivot_and_escalate[game_id].pop(0)
 			cards_to_send = cards_to_send + "Pivot and Escalate card:\n"+format_card_info(pivot_and_escalate_card[game_id])+"\n"
-			await player.send(
-				embed=discord.Embed(title="Backdoors and Breaches",description=f"Your hand: {cards_to_send}"
-			))
+			try:
+				await player.send(
+					embed=discord.Embed(title="Backdoors and Breaches",description=f"Your hand: {cards_to_send}"
+				))
+			except:
+				pass
+			master_cards_to_send = cards_to_send
 
 	# Start the first player's turn
-	await ctx.reply(
+	await ctx.send(
 		embed=discord.Embed(title="Backdoors and Breaches",description=f"Starting Backdoors and Breaches game with {len(players[game_id])} players... {players[game_id][0].mention}'s turn"
 	))
 
 	await ctx.send(
 		embed=discord.Embed(title="Backdoors and Breaches",description="Remaining procedures cards:\n\n {}".format('\n\n'.join([format_card_info(card) for card in procedures[game_id]]))
 	))
-
+	
+	await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description=f"Your hand: {master_cards_to_send}"))
 
 @bot.hybrid_command(name="join-game", description="Lets players join by assigning roles, channel access.")
 async def join_game(ctx,game_id):
@@ -336,7 +349,7 @@ async def play_procedure(ctx, card_name: str):
 		return await ctx.reply("No game running")
 
 	player = ctx.author
-	if player != players[game_id][turn]:
+	if player != players[game_id][turn[game_id]]:
 		await ctx.reply("It's not your turn!")
 		return
 
@@ -351,7 +364,7 @@ async def play_procedure(ctx, card_name: str):
 	modifier = 0
 	playerCard = False
 	for cardToTurn in cooldowns[game_id].copy():
-		if (cooldowns[game_id][cardToTurn] + 3) < turn:
+		if (cooldowns[game_id][cardToTurn] + 3) < turn[game_id]:
 			del cooldowns[game_id][cardToTurn]
 	if card_name in cooldowns[game_id]:
 		return await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Card is on cooldown!"))
@@ -374,7 +387,7 @@ async def play_procedure(ctx, card_name: str):
 				embed=discord.Embed(title="Backdoors and Breaches",description="Remaining procedures:\n {}".format(',\n'.join([card['Title'] for card in procedures]))
 			))
 		except:
-			await player.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Invalid card!"))
+			await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Invalid card!"))
 			return
 
 	await ctx.send(embed=discord.Embed(title="Backdoors and Breaches",description=player.mention + " Plays card:\n\n" + format_card_info(card)))
@@ -413,12 +426,12 @@ async def play_procedure(ctx, card_name: str):
 			fail = False
 
 		if fail:
-			cooldowns[game_id][card["Title"]] = turn
+			cooldowns[game_id][card["Title"]] = turn[game_id]
 			await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Procedure had no effect"))
 
 	else:
 		failed_rolls = failed_rolls + 1
-		cooldowns[game_id][card["Title"]] = turn
+		cooldowns[game_id][card["Title"]] = turn[game_id]
 		print("Procedure failed")
 		await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Procedure failed"))
 
@@ -437,7 +450,7 @@ async def play_procedure(ctx, card_name: str):
 					game_ended[game_id] = True
 
 	# Check if the game has ended
-	turn = (turn + 1) % len(players[game_id])
+	turn[game_id] = (turn[game_id] + 1) % len(players[game_id])
 	if turn[game_id] > 10:
 		game_ended[game_id] = True
 
@@ -494,7 +507,7 @@ async def play_c2(ctx, card_name: str):
 		return await ctx.reply("You are not incident master")
 
 	# Check that the player sent a valid command to play an incident master card
-	if ctx.author != players[game_id][turn]:
+	if ctx.author != players[game_id][turn[game_id]]:
 		await ctx.reply("It's not your turn!")
 		return
 
@@ -526,7 +539,7 @@ async def play_persistence(ctx, card_name: str):
 		return await ctx.reply("You are not incident master")
 
 	# Check that the player sent a valid command to play an incident master card
-	if ctx.author != players[game_id][turn]:
+	if ctx.author != players[game_id][turn[game_id]]:
 		await ctx.reply("It's not your turn!")
 		return
 
@@ -558,7 +571,7 @@ async def play_pivot_and_escalate(ctx, card_name: str):
 		return await ctx.reply("You are not incident master")
 
 	# Check that the player sent a valid command to play an incident master card
-	if ctx.author != players[game_id][turn]:
+	if ctx.author != players[game_id][turn[game_id]]:
 		await ctx.reply("It's not your turn!")
 		return
 
@@ -588,6 +601,11 @@ async def end_game(ctx,game_id):
 	global failed_rolls
 	global card_modifiers
 	global games
+	
+	global incident_master_card
+	global c2_and_exfil_card
+	global persistence_card
+	global pivot_and_escalate_card
 	
 	if not game_id in players:
 		if ctx:
@@ -621,15 +639,38 @@ async def end_game(ctx,game_id):
 	del card_modifiers[game_id]
 	del failed_rolls[game_id]
 	
-	del c2_and_exfil[game_id]
-	del persistence[game_id]
-	del injects[game_id]
-	del pivot_and_escalate[game_id]
-
-	del incident_master_card[game_id]
-	del c2_and_exfil_card[game_id]
-	del persistence_card[game_id]
-	del pivot_and_escalate_card[game_id]
+	try:
+		del c2_and_exfil[game_id]
+	except:
+		pass
+	try:	
+		del persistence[game_id]
+	except:
+		pass
+	try:
+		del injects[game_id]
+	except:
+		pass
+	try:
+		del pivot_and_escalate[game_id]
+	except:
+		pass
+	try:
+		del incident_master_card[game_id]
+	except:
+		pass
+	try:
+		del c2_and_exfil_card[game_id]
+	except:
+		pass
+	try:
+		del persistence_card[game_id]
+	except:
+		pass
+	try:
+		del pivot_and_escalate_card[game_id]
+	except:
+		pass
 	
 	if ctx:
 		await ctx.reply(embed=discord.Embed(title="Backdoors and Breaches",description="Game ended"))
@@ -639,9 +680,11 @@ async def bnbhelp(ctx):
 	try:
 		response = """## Available Commands
 
-- `start-game`: Starts a new game by creating a new channel and setting up the necessary roles and permissions.
+- `setup-game`: Creates a game id and sets all the needed variables.
+- `start-game`: Starts a new game should be run my incident master only after `setup-game`
 - `join-game`: Allows players to join the game by assigning them the "Player" role and granting them access to the game channel.
 - `play-procedure`: Starts the Procedure phase of the game, where players must complete a series of challenges to progress.
+- `play-incident-master`: Starts the Incident Master phase of the game, where players take turns being the Incident Master and directing the other players on how to respond to a simulated incident.
 - `play-c2`: Starts the Command and Control phase of the game, where players take turns being the C2 team and must coordinate with the other players to complete a series of tasks.
 - `play-persistence`: Starts the Persistence phase of the game, where players must find and eliminate a hidden backdoor in the system.
 - `play-pivot`: Starts the Pivot phase of the game, where players must pivot to a different part of the system and continue their investigation.
