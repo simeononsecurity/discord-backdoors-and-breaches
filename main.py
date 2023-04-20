@@ -252,9 +252,9 @@ async def valid_cards_procedures(interaction: discord.Interaction, card_name: st
 		print("Not in a game")
 		return []
 	
-	player_index = players[game_id].index(interaction.user)
-	if player_index == 0:
-		return []
+	#player_index = players[game_id].index(interaction.user)
+	#if player_index == 0:
+		#return []
 	
 	hand = []
 	validCards = []
