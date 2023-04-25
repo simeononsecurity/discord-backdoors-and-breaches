@@ -5,6 +5,7 @@ import datetime
 from discord import Activity, ActivityType, Status, app_commands
 from discord.ext import commands, tasks
 import os
+import copy
 
 from typing import Literal, Union, NamedTuple, List
 from enum import Enum
@@ -115,12 +116,12 @@ async def setup_game(ctx):
 	failed_rolls[game_id] = 0
 	game_ended[game_id] = True
 	
-	procedures[game_id] = proceduresData.Procedures
-	incident_master[game_id] = incident_masterData.initial_compromise
-	c2_and_exfil[game_id] = c2Data.C2
-	persistence[game_id] = persistenceData.Persistence
-	injects[game_id] = injectsData.Injects
-	pivot_and_escalate[game_id] = pivot_and_escalateData.pivot_and_escalate
+	procedures[game_id] = copy.deepcopy(proceduresData.Procedures)
+	incident_master[game_id] = copy.deepcopy(incident_masterData.initial_compromise)
+	c2_and_exfil[game_id] = copy.deepcopy(c2Data.C2)
+	persistence[game_id] = copy.deepcopy(persistenceData.Persistence)
+	injects[game_id] = copy.deepcopy(injectsData.Injects)
+	pivot_and_escalate[game_id] = copy.deepcopy(pivot_and_escalateData.pivot_and_escalate)
 	
 	if ctx.author not in players[game_id]:
 		players[game_id].append(ctx.author)
