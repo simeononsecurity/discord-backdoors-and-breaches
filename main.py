@@ -476,7 +476,7 @@ async def play_procedure(ctx, card_name: str):
 
 	if dice_roll == 1:
 		injects_card = injects[game_id].pop(0)
-		await handle_injects(ctx,injects_card)
+		await handle_injects(ctx,injects_card,game_id)
 	elif failed_rolls[game_id] > 2:
 		failed_rolls[game_id] = 0
 		injects_card = injects[game_id].pop(0)
