@@ -4,6 +4,7 @@ Procedures = [
         "Description": "Yeah... good luck with this one. Are you logging the right things? Do you regularly emulate attack scenarios to see if you can detect them?",
         "Tools": "SOF-ELK JPGert Tools Analysis",
         "Documentation": "https://github.com/philhagen/sof-elk https://jpcertcc.github.io/ToolAnalysisResultSheet",
+        "Image":"https://i.imgur.com/DrbEhX1.png",
     },
     {
         "Title": "SERVER ANALYSIS",
