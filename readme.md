@@ -6,9 +6,9 @@
 
 <img src="https://github.com/simeononsecurity/discord-backdoors-and-breaches/blob/main/.github/images/bnb-dark.png?raw=true" alt="Backdoors and Breaches logo" width="200"/>
 
-
 A Discord bot for Backdoors and Breaches, a turn-based strategy game by [BHIS](https://www.blackhillsinfosec.com/projects/backdoorsandbreaches/).
 
+[See the bot in action!](https://discord.gg/CYVe2CyrXk)
 
 ## Available Commands
 
@@ -68,13 +68,13 @@ or pull straight from the image on [dockerhub](https://hub.docker.com/r/simeonon
 docker run -td --name bnbbot -e BOT_TOKEN=<discord_bot_token_here> -e CHANNEL_ID=<game_channel_id_here> simeononsecurity/discord-backdoors-and-breaches:latest
 ```
 
-<a href="https://simeononsecurity.ch" target="_blank" rel="noopener noreferrer">
+<a href="https://simeononsecurity.com" target="_blank" rel="noopener noreferrer">
   <h2>Explore the World of Cybersecurity</h2>
 </a>
-<a href="https://simeononsecurity.ch" target="_blank" rel="noopener noreferrer">
-  <img src="https://simeononsecurity.ch/img/banner.png" alt="SimeonOnSecurity Logo" width="300" height="300">
+<a href="https://simeononsecurity.com" target="_blank" rel="noopener noreferrer">
+  <img src="https://simeononsecurity.com/img/banner.png" alt="SimeonOnSecurity Logo" width="300" height="300">
 </a>
 
 ### Links:
 - #### [github.com/simeononsecurity](https://github.com/simeononsecurity)
-- #### [simeononsecurity.ch](https://simeononsecurity.ch)
+- #### [simeononsecurity.com](https://simeononsecurity.com)
