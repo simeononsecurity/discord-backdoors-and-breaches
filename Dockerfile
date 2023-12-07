@@ -23,6 +23,8 @@ pip list
 ENV BOT_TOKEN=${BOT_TOKEN}
 ENV CHANNEL_ID=${CHANNEL_ID}
 
-# Run app.py when the container launches
-CMD ["python", "main.py"]
+# Make the entry point script executable
+RUN chmod +x entrypoint.sh
 
+# Define the default command to run when the container starts
+CMD ["./entrypoint.sh"]
